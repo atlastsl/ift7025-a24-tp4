@@ -1,0 +1,14 @@
+--  Root
+|--- PetalLengthCm <2.45
+|  |--- Class: 0
+|--- PetalLengthCm >=2.45
+|  |--- PetalWidthCm <1.7000000000000002
+|  |  |--- SepalWidthCm <2.25
+|  |  |  |--- Class: 1
+|  |  |--- SepalWidthCm >=2.25
+|  |  |  |--- Class: 1
+|  |--- PetalWidthCm >=1.7000000000000002
+|  |  |--- PetalLengthCm <4.85
+|  |  |  |--- Class: 1
+|  |  |--- PetalLengthCm >=4.85
+|  |  |  |--- Class: 2
