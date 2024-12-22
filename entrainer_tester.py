@@ -258,7 +258,7 @@ def nnCvNbEpoch(trainX, trainY, dimension, depth, hdnAct, outAct, alpha, nbEpoch
                            alpha=alpha, nbEpoch=nbEpochs, trace=trace)
         (perf_i, _) = nnCrossValidationStep(nn, trainX, trainY)
         d_perf[i] = perf_i
-        print(">> ------ Completed Nb Epoch " + str(nbEpochs))
+        print(">> ------ Completed Nb Epoch " + str(nbEpochs), flush=True)
     plt.plot(np.array(nbEpochsRange), d_perf)
     plt.xlabel('Nb Epochs')
     plt.ylabel('Accurary with 10-CV')
@@ -274,7 +274,7 @@ def nnCvDimension(trainX, trainY, dimRange, depth, hdnAct, outAct, alpha, nbEpoc
                            alpha=alpha, nbEpoch=nbEpochs, trace=trace)
         (perf_i, _) = nnCrossValidationStep(nn, trainX, trainY)
         d_perf[i] = perf_i
-        print(">> ------ Completed Dimension " + str(dimension))
+        print(">> ------ Completed Dimension " + str(dimension), flush=True)
     plt.plot(np.array(dimRange), d_perf)
     plt.xlabel('Dimensions')
     plt.ylabel('Accurary with 10-CV')
@@ -292,7 +292,7 @@ def nnCvDepth(trainX, trainY, dimension, depthRange, hdnAct, outAct, alpha, nbEp
         (perf_i, epp) = nnCrossValidationStep(nn, trainX, trainY, eval_epoch_perfs=True)
         d_perf[i] = perf_i
         epoch_perfs.append(epp)
-        print(">> ------ Completed Depth " + str(depth))
+        print(">> ------ Completed Depth " + str(depth), flush=True)
     plt.plot(np.array(depthRange), d_perf)
     plt.xlabel('Depths')
     plt.ylabel('Accurary with 10-CV')
@@ -308,8 +308,8 @@ def nnCvDepth(trainX, trainY, dimension, depthRange, hdnAct, outAct, alpha, nbEp
     plt.savefig(f'images/nn_{datasetName.lower()}_vgr.png')
 
 
-print("NEURAL NETWORK")
-print("--------------------------------------------------------------------------------------------------------------")
+print("NEURAL NETWORK", flush=True)
+print("--------------------------------------------------------------------------------------------------------------", flush=True)
 
 # ## 2.2. Iris Dataset
 # nnIrisHdnAct = NNActivationSigmoid
