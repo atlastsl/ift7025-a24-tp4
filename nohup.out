@@ -1,0 +1,39 @@
+NEURAL NETWORK
+--------------------------------------------------------------------------------------------------------------
+
+WINE Dataset
+
+WINE Dataset - Selection Nb Epoques par CV
+
+NEURAL NETWORK
+--------------------------------------------------------------------------------------------------------------
+
+WINE Dataset
+
+WINE Dataset - Selection Nb Epoques par CV
+
+>> ------ Completed Nb Epoch 100
+>> ------ Completed Nb Epoch 200
+>> ------ Completed Nb Epoch 300
+>> ------ Completed Nb Epoch 400
+>> ------ Completed Nb Epoch 500
+>> ------ Completed Nb Epoch 600
+>> ------ Completed Nb Epoch 700
+>> ------ Completed Nb Epoch 800
+>> ------ Completed Nb Epoch 900
+>> ------ Completed Nb Epoch 1000
+
+ABALONE Dataset
+
+ABALONE Dataset - Selection Nb Epoques par CV
+
+>> ------ Completed Nb Epoch 100
+>> ------ Completed Nb Epoch 200
+>> ------ Completed Nb Epoch 300
+>> ------ Completed Nb Epoch 400
+>> ------ Completed Nb Epoch 500
+>> ------ Completed Nb Epoch 600
+>> ------ Completed Nb Epoch 700
+>> ------ Completed Nb Epoch 800
+>> ------ Completed Nb Epoch 900
+>> ------ Completed Nb Epoch 1000
