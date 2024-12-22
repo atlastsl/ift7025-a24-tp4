@@ -352,37 +352,37 @@ print("-------------------------------------------------------------------------
 ## 2.3. WINE Dataset
 nnWineHdnAct = NNActivationSigmoid
 nnWineOutAct = NNActivationSigmoid
-print("")
-print("WINE Dataset")
-print("")
+print("", flush=True)
+print("WINE Dataset", flush=True)
+print("", flush=True)
 
 nnWineNbEpoch = 100
 nnWineDimension = 4
 nnWineDepth = 1
 nnWineAlpha = 0.001
 # ### 2.3.1. Test arbitraire
-# print("WINE Dataset - Test Arbitraire")
-# print("")
+# print("WINE Dataset - Test Arbitraire", flush=True)
+# print("", flush=True)
 # nnTrainTest(wine_train_X, wine_train_Y, wine_test_X, wine_test_Y, wine_train_X.shape[1], 1, nnWineHdnAct,
 #             nnWineOutAct, nnWineAlpha, 100, True, "WINE")
 ### 2.3.2. Selection du nombre d'epoques par CV
-print("WINE Dataset - Selection Nb Epoques par CV")
-print("")
+print("WINE Dataset - Selection Nb Epoques par CV", flush=True)
+print("", flush=True)
 nnCvNbEpoch(wine_train_X, wine_train_Y, 4, 1, nnWineHdnAct, nnWineOutAct, nnWineAlpha,
             [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], False, "WINE")
 # ### 2.3.3. Selection de la dimension par CV
-# print("WINE Dataset - Selection Dimension par CV")
-# print("")
+# print("WINE Dataset - Selection Dimension par CV", flush=True)
+# print("", flush=True)
 # nnCvDimension(wine_train_X, wine_train_Y, range(1, 8, 1), 1, nnWineHdnAct, nnWineOutAct, nnWineAlpha,
 #               nnWineNbEpoch, False, "WINE")
 # ### 2.3.4. Selection de la profondeur par CV
-# print("WINE Dataset - Selection Profondeur par CV")
-# print("")
+# print("WINE Dataset - Selection Profondeur par CV", flush=True)
+# print("", flush=True)
 # nnCvDepth(wine_train_X, wine_train_Y, nnWineDimension, range(1, 6, 1), nnWineHdnAct, nnWineOutAct, nnWineAlpha,
 #           nnWineNbEpoch, False, "WINE")
 # ### 2.3.5. Entrainement et test avec les hyperparametres finaux
-# print("WINE Dataset - Test HyperParam sélectionnés")
-# print("")
+# print("WINE Dataset - Test HyperParam sélectionnés", flush=True)
+# print("", flush=True)
 # nnTrainTest(wine_train_X, wine_train_Y, iris_test_X, iris_test_Y, nnWineDimension, nnWineDepth, nnWineHdnAct,
 #             nnWineOutAct, nnWineAlpha, nnWineNbEpoch, True, "WINE")
 
@@ -392,35 +392,35 @@ nnCvNbEpoch(wine_train_X, wine_train_Y, 4, 1, nnWineHdnAct, nnWineOutAct, nnWine
 ## 2.4. ABALONE Dataset
 nnAbaloneHdnAct = NNActivationSigmoid
 nnAbaloneOutAct = NNActivationSoftmax
-print("")
-print("ABALONE Dataset")
-print("")
+print("", flush=True)
+print("ABALONE Dataset", flush=True)
+print("", flush=True)
 
 nnAbaloneNbEpoch = 100
 nnAbaloneDimension = 4
 nnAbaloneDepth = 1
 ### 2.4.1. Test arbitraire
-# print("ABALONE Dataset - Test Arbitraire")
-# print("")
+# print("ABALONE Dataset - Test Arbitraire", flush=True)
+# print("", flush=True)
 # nnTrainTest(abalone_train_X, abalone_train_Y, abalone_test_X, abalone_test_Y, abalone_train_X.shape[1], 1,
 #             nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha, 100, True, "ABALONE")
 ### 2.4.2. Selection du nombre d'epoques par CV
-print("ABALONE Dataset - Selection Nb Epoques par CV")
-print("")
+print("ABALONE Dataset - Selection Nb Epoques par CV", flush=True)
+print("", flush=True)
 nnCvNbEpoch(abalone_train_X, abalone_train_Y, 4, 1, nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha,
             [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], False, "ABALONE")
 # ### 2.4.3. Selection de la dimension par CV
-# print("ABALONE Dataset - Selection Dimension par CV")
-# print("")
+# print("ABALONE Dataset - Selection Dimension par CV", flush=True)
+# print("", flush=True)
 # nnCvDimension(abalone_train_X, abalone_train_Y, range(1, 8, 1), 1, nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha,
 #               nnAbaloneNbEpoch, False, "ABALONE")
 # ### 2.2.4. Selection de la profondeur par CV
-# print("ABALONE Dataset - Selection Profondeur par CV")
-# print("")
+# print("ABALONE Dataset - Selection Profondeur par CV", flush=True)
+# print("", flush=True)
 # nnCvDepth(abalone_train_X, abalone_train_Y, nnAbaloneDimension, range(1, 6, 1), nnAbaloneHdnAct, nnAbaloneOutAct,
 #           nnAlpha, nnAbaloneNbEpoch, False, "ABALONE")
 # ### 2.2.5. Entrainement et test avec les hyperparametres finaux
-# print("ABALONE Dataset - Test HyperParam sélectionnés")
-# print("")
+# print("ABALONE Dataset - Test HyperParam sélectionnés", flush=True)
+# print("", flush=True)
 # nnTrainTest(abalone_train_X, abalone_train_Y, abalone_test_X, abalone_test_Y, nnAbaloneDimension, nnAbaloneDepth,
 #             nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha, nnAbaloneNbEpoch, True, "ABALONE")
