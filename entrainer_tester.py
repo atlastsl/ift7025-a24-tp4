@@ -259,6 +259,7 @@ def nnCvNbEpoch(trainX, trainY, dimension, depth, hdnAct, outAct, alpha, nbEpoch
         (perf_i, _) = nnCrossValidationStep(nn, trainX, trainY)
         d_perf[i] = perf_i
         print(">> ------ Completed Nb Epoch " + str(nbEpochs), flush=True)
+    plt.clf()
     plt.plot(np.array(nbEpochsRange), d_perf)
     plt.xlabel('Nb Epochs')
     plt.ylabel('Accurary with 10-CV')
@@ -275,6 +276,7 @@ def nnCvDimension(trainX, trainY, dimRange, depth, hdnAct, outAct, alpha, nbEpoc
         (perf_i, _) = nnCrossValidationStep(nn, trainX, trainY)
         d_perf[i] = perf_i
         print(">> ------ Completed Dimension " + str(dimension), flush=True)
+    plt.clf()
     plt.plot(np.array(dimRange), d_perf)
     plt.xlabel('Dimensions')
     plt.ylabel('Accurary with 10-CV')
@@ -293,11 +295,13 @@ def nnCvDepth(trainX, trainY, dimension, depthRange, hdnAct, outAct, alpha, nbEp
         d_perf[i] = perf_i
         epoch_perfs.append(epp)
         print(">> ------ Completed Depth " + str(depth), flush=True)
+    plt.clf()
     plt.plot(np.array(depthRange), d_perf)
     plt.xlabel('Depths')
     plt.ylabel('Accurary with 10-CV')
     plt.title(f'Neural Network Depth Selection for {datasetName} Dataset')
     plt.savefig(f'images/nn_{datasetName.lower()}_sel_de.png')
+    plt.clf()
     for i in range(len(depthRange)):
         plt.plot(np.array(range(1, len(epoch_perfs[i])+1)), np.array(epoch_perfs[i]), color=colors[i],
                  label=f'Depth {depthRange[i]}')
@@ -356,7 +360,7 @@ print("", flush=True)
 print("WINE Dataset", flush=True)
 print("", flush=True)
 
-nnWineNbEpoch = 100
+nnWineNbEpoch = 500
 nnWineDimension = 4
 nnWineDepth = 1
 nnWineAlpha = 0.001
@@ -365,16 +369,16 @@ nnWineAlpha = 0.001
 # print("", flush=True)
 # nnTrainTest(wine_train_X, wine_train_Y, wine_test_X, wine_test_Y, wine_train_X.shape[1], 1, nnWineHdnAct,
 #             nnWineOutAct, nnWineAlpha, 100, True, "WINE")
-### 2.3.2. Selection du nombre d'epoques par CV
-print("WINE Dataset - Selection Nb Epoques par CV", flush=True)
-print("", flush=True)
-nnCvNbEpoch(wine_train_X, wine_train_Y, 4, 1, nnWineHdnAct, nnWineOutAct, nnWineAlpha,
-            [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], False, "WINE")
-# ### 2.3.3. Selection de la dimension par CV
-# print("WINE Dataset - Selection Dimension par CV", flush=True)
+# ### 2.3.2. Selection du nombre d'epoques par CV
+# print("WINE Dataset - Selection Nb Epoques par CV", flush=True)
 # print("", flush=True)
-# nnCvDimension(wine_train_X, wine_train_Y, range(1, 8, 1), 1, nnWineHdnAct, nnWineOutAct, nnWineAlpha,
-#               nnWineNbEpoch, False, "WINE")
+# nnCvNbEpoch(wine_train_X, wine_train_Y, 4, 1, nnWineHdnAct, nnWineOutAct, nnWineAlpha,
+#             [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], False, "WINE")
+### 2.3.3. Selection de la dimension par CV
+print("WINE Dataset - Selection Dimension par CV", flush=True)
+print("", flush=True)
+nnCvDimension(wine_train_X, wine_train_Y, range(1, 8, 1), 1, nnWineHdnAct, nnWineOutAct, nnWineAlpha,
+              nnWineNbEpoch, False, "WINE")
 # ### 2.3.4. Selection de la profondeur par CV
 # print("WINE Dataset - Selection Profondeur par CV", flush=True)
 # print("", flush=True)
