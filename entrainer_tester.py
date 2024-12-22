@@ -1,3 +1,5 @@
+import multiprocessing
+
 import numpy as np
 import load_datasets
 from DecisionTree import DecisionTree, decisionTreeScikitLearn
@@ -135,81 +137,8 @@ def decisionTreeTrnTst(train_X, train_Y, test_X, test_Y, datasetName="", varName
     dcTree.display(varNames=varNames, file=file)
 
 
-# print("DECISION TREE")
-# print("--------------------------------------------------------------------------------------------------------------")
 
-## 1.2. Iris Dataset
-
-# print("")
-# print("Iris Dataset")
-# print("")
-# ### 1.2.1. Courbe d'apprentissage
-# print("Iris Dataset - Learning Curve")
-# print("")
-# decisionTreeLC(iris_train_X, iris_train_Y, "IRIS")
-# ### 1.2.2. Entrainement et test
-# print("Iris Dataset - Training & Test")
-# print("")
-# decisionTreeTrnTst(iris_train_X, iris_train_Y, iris_test_X, iris_test_Y, "IRIS", iris_columns)
-# ### 1.2.3. Courbe d'apprentissage [Avec Elagage]
-# print("Iris Dataset - Pruned Tree - Learning Curve")
-# print("")
-# decisionTreeLC(iris_train_X, iris_train_Y, "IRIS", pruning=True)
-# ### 1.2.4. Entrainement et test [Avec Elagage]
-# print("Iris Dataset - Pruned Tree - Training & Test")
-# print("")
-# decisionTreeTrnTst(iris_train_X, iris_train_Y, iris_test_X, iris_test_Y, "IRIS", iris_columns, pruning=True)
-
-
-## 1.3. Wine Dataset
-
-# print("")
-# print("Wine Dataset")
-# print("")
-### 1.3.1. Courbe d'apprentissage
-# print("Wine Dataset - Learning Curve")
-# print("")
-# decisionTreeLC(wine_train_X, wine_train_Y, "WINE")
-# ### 1.3.2. Entrainement et test
-# print("Wine Dataset - Training & Test")
-# print("")
-# decisionTreeTrnTst(wine_train_X, wine_train_Y, wine_test_X, wine_test_Y, "WINE", wine_columns)
-### 1.3.3. Courbe d'apprentissage [Avec Elagage]
-# print("Wine Dataset - Pruned Tree - Learning Curve")
-# print("")
-# decisionTreeLC(wine_train_X, wine_train_Y, "WINE", pruning=True)
-# ### 1.3.4. Entrainement et test [Avec Elagage]
-# print("Wine Dataset - Pruned Tree - Training & Test")
-# print("")
-# decisionTreeTrnTst(wine_train_X, wine_train_Y, wine_test_X, wine_test_Y, "WINE", wine_columns, pruning=True)
-
-
-## 1.4. Abalone Dataset
-
-# print("")
-# print("Abalone Dataset")
-# print("")
-# ## 1.4.1. Courbe d'apprentissage
-# print("Abalone Dataset - Learning Curve")
-# print("")
-# decisionTreeLC(abalone_train_X, abalone_train_Y, "ABALONE")
-# ## 1.4.2. Entrainement et test
-# print("Abalone Dataset - Training & Test")
-# print("")
-# decisionTreeTrnTst(abalone_train_X, abalone_train_Y, abalone_test_X, abalone_test_Y, "ABALONE",
-#                    abalone_columns)
-## 1.4.3. Courbe d'apprentissage [Avec Elagage]
-# print("Abalone Dataset - Pruned Tree - Learning Curve")
-# print("")
-# decisionTreeLC(abalone_train_X, abalone_train_Y, "ABALONE", pruning=True)
-# ## 1.4.4. Entrainement et test [Avec Elagage]
-# print("Abalone Dataset - Pruned Tree - Training & Test")
-# print("")
-# decisionTreeTrnTst(abalone_train_X, abalone_train_Y, abalone_test_X, abalone_test_Y, "ABALONE",
-#                    abalone_columns, pruning=True)
-
-
-# 2. RESEAU DEN NEURONES
+# 2. RESEAU DE NEURONES
 
 ## 2.1. Initialisation
 
@@ -250,6 +179,14 @@ def nnCrossValidationStep(nn, trainX, trainY, eval_epoch_perfs=False):
     return np.array(perf).mean(), epochPerfs
 
 
+def nnCrossValidationStep_MltProc(index, purpose, argValue, nn, trainX, trainY, eval_epoch_perfs=False, results=None):
+    print(f">> ------ Start {purpose} {argValue} [Index = {(index+1)}]")
+    r = nnCrossValidationStep(nn, trainX, trainY, eval_epoch_perfs)
+    if results is not None:
+        results[index] = r
+    print(f">> ------ End {purpose} {argValue} [Index = {(index+1)}]")
+
+
 def nnCvNbEpoch(trainX, trainY, dimension, depth, hdnAct, outAct, alpha, nbEpochsRange, trace, datasetName):
     d_perf = np.zeros(len(nbEpochsRange))
     for i in range(len(nbEpochsRange)):
@@ -267,6 +204,33 @@ def nnCvNbEpoch(trainX, trainY, dimension, depth, hdnAct, outAct, alpha, nbEpoch
     plt.savefig(f'images/nn_{datasetName.lower()}_sel_ep.png')
 
 
+def nnCvNbEpoch_MltProc(trainX, trainY, dimension, depth, hdnAct, outAct, alpha, nbEpochsRange, trace, datasetName):
+    manager = multiprocessing.Manager()
+    results = manager.dict()
+    jobs = []
+    for i in range(len(nbEpochsRange)):
+        nbEpochs = nbEpochsRange[i]
+        nn = NeuralNetwork(dimension=dimension, depth=depth, hdnActivation=hdnAct, outActivation=outAct,
+                           alpha=alpha, nbEpoch=nbEpochs, trace=trace)
+        p = multiprocessing.Process(target=nnCrossValidationStep_MltProc,
+                                    args=(i, "Nb Epochs", nbEpochs, nn, trainX, trainY, False, results))
+        jobs.append(p)
+        p.start()
+    for job in jobs:
+        job.join()
+    r = results.values()
+    d_perf = np.zeros(len(nbEpochsRange))
+    for i in range(len(nbEpochsRange)):
+        (perf_i, _) = r[i]
+        d_perf[i] = perf_i
+    plt.clf()
+    plt.plot(np.array(nbEpochsRange), d_perf)
+    plt.xlabel('Nb Epochs')
+    plt.ylabel('Accurary with 10-CV')
+    plt.title(f'Neural Network Nb Epochs Selection for {datasetName} Dataset')
+    plt.savefig(f'images/nn_{datasetName.lower()}_sel_ep.png')
+
+
 def nnCvDimension(trainX, trainY, dimRange, depth, hdnAct, outAct, alpha, nbEpochs, trace, datasetName):
     d_perf = np.zeros(len(dimRange))
     for i in range(len(dimRange)):
@@ -276,6 +240,33 @@ def nnCvDimension(trainX, trainY, dimRange, depth, hdnAct, outAct, alpha, nbEpoc
         (perf_i, _) = nnCrossValidationStep(nn, trainX, trainY)
         d_perf[i] = perf_i
         print(">> ------ Completed Dimension " + str(dimension), flush=True)
+    plt.clf()
+    plt.plot(np.array(dimRange), d_perf)
+    plt.xlabel('Dimensions')
+    plt.ylabel('Accurary with 10-CV')
+    plt.title(f'Neural Network Dimension Selection for {datasetName} Dataset')
+    plt.savefig(f'images/nn_{datasetName.lower()}_sel_di.png')
+
+
+def nnCvDimension_MltProc(trainX, trainY, dimRange, depth, hdnAct, outAct, alpha, nbEpochs, trace, datasetName):
+    manager = multiprocessing.Manager()
+    results = manager.dict()
+    jobs = []
+    for i in range(len(dimRange)):
+        dimension = dimRange[i]
+        nn = NeuralNetwork(dimension=dimension, depth=depth, hdnActivation=hdnAct, outActivation=outAct,
+                           alpha=alpha, nbEpoch=nbEpochs, trace=trace)
+        p = multiprocessing.Process(target=nnCrossValidationStep_MltProc,
+                                    args=(i, "Dimension", dimension, nn, trainX, trainY, False, results))
+        jobs.append(p)
+        p.start()
+    for job in jobs:
+        job.join()
+    r = results.values()
+    d_perf = np.zeros(len(dimRange))
+    for i in range(len(dimRange)):
+        (perf_i, _) = r[i]
+        d_perf[i] = perf_i
     plt.clf()
     plt.plot(np.array(dimRange), d_perf)
     plt.xlabel('Dimensions')
@@ -303,7 +294,7 @@ def nnCvDepth(trainX, trainY, dimension, depthRange, hdnAct, outAct, alpha, nbEp
     plt.savefig(f'images/nn_{datasetName.lower()}_sel_de.png')
     plt.clf()
     for i in range(len(depthRange)):
-        plt.plot(np.array(range(1, len(epoch_perfs[i])+1)), np.array(epoch_perfs[i]), color=colors[i],
+        plt.plot(np.array(range(1, len(epoch_perfs[i]) + 1)), np.array(epoch_perfs[i]), color=colors[i],
                  label=f'Depth {depthRange[i]}')
     plt.xlabel('Learning epoch')
     plt.ylabel('Accurary with 10-CV')
@@ -312,119 +303,232 @@ def nnCvDepth(trainX, trainY, dimension, depthRange, hdnAct, outAct, alpha, nbEp
     plt.savefig(f'images/nn_{datasetName.lower()}_vgr.png')
 
 
-print("NEURAL NETWORK", flush=True)
-print("--------------------------------------------------------------------------------------------------------------", flush=True)
-
-# ## 2.2. Iris Dataset
-# nnIrisHdnAct = NNActivationSigmoid
-# nnIrisOutAct = NNActivationSoftmax
-# print("")
-# print("IRIS Dataset")
-# print("")
-#
-# nnIrisNbEpoch = 400
-# nnIrisDimension = 2
-# nnIrisDepth = 1
-# ### 2.2.1. Test arbitraire
-# print("IRIS Dataset - Test Arbitraire")
-# print("")
-# nnTrainTest(iris_train_X, iris_train_Y, iris_test_X, iris_test_Y, iris_train_X.shape[1], 1, nnIrisHdnAct,
-#             nnIrisOutAct, nnAlpha, 100, True, "IRIS")
-# ### 2.2.2. Selection du nombre d'epoques par CV
-# print("IRIS Dataset - Selection Nb Epoques par CV")
-# print("")
-# nnCvNbEpoch(iris_train_X, iris_train_Y, 4, 1, nnIrisHdnAct, nnIrisOutAct, nnAlpha,
-#             [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], False, "IRIS")
-# ### 2.2.3. Selection de la dimension par CV
-# print("IRIS Dataset - Selection Dimension par CV")
-# print("")
-# nnCvDimension(iris_train_X, iris_train_Y, range(1, 8, 1), 1, nnIrisHdnAct, nnIrisOutAct, nnAlpha,
-#               nnIrisNbEpoch, False, "IRIS")
-# ### 2.2.4. Selection de la profondeur par CV
-# print("IRIS Dataset - Selection Profondeur par CV")
-# print("")
-# nnCvDepth(iris_train_X, iris_train_Y, nnIrisDimension, range(1, 6, 1), nnIrisHdnAct, nnIrisOutAct, nnAlpha,
-#           nnIrisNbEpoch, False, "IRIS")
-# ### 2.2.5. Entrainement et test avec les hyperparametres finaux
-# print("IRIS Dataset - Test HyperParam sélectionnés")
-# print("")
-# nnTrainTest(iris_train_X, iris_train_Y, iris_test_X, iris_test_Y, nnIrisDimension, nnIrisDepth, nnIrisHdnAct,
-#             nnIrisOutAct, nnAlpha, nnIrisNbEpoch, True, "IRIS")
+def nnCvDepth_MltProc(trainX, trainY, dimension, depthRange, hdnAct, outAct, alpha, nbEpochs, trace, datasetName):
+    manager = multiprocessing.Manager()
+    results = manager.dict()
+    jobs = []
+    for i in range(len(depthRange)):
+        depth = depthRange[i]
+        nn = NeuralNetwork(dimension=dimension, depth=depth, hdnActivation=hdnAct, outActivation=outAct,
+                           alpha=alpha, nbEpoch=nbEpochs, trace=trace)
+        p = multiprocessing.Process(target=nnCrossValidationStep_MltProc,
+                                    args=(i, "Depth", depth, nn, trainX, trainY, True, results))
+        jobs.append(p)
+        p.start()
+    for job in jobs:
+        job.join()
+    r = results.values()
+    d_perf = np.zeros(len(depthRange))
+    epoch_perfs = []
+    for i in range(len(depthRange)):
+        (perf_i, epp) = r[i]
+        d_perf[i] = perf_i
+        epoch_perfs.append(epp)
+    plt.clf()
+    plt.plot(np.array(depthRange), d_perf)
+    plt.xlabel('Depths')
+    plt.ylabel('Accurary with 10-CV')
+    plt.title(f'Neural Network Dimension Selection for {datasetName} Dataset')
+    plt.savefig(f'images/nn_{datasetName.lower()}_sel_de.png')
+    plt.clf()
+    for i in range(len(depthRange)):
+        plt.plot(np.array(range(1, len(epoch_perfs[i]) + 1)), np.array(epoch_perfs[i]), color=colors[i],
+                 label=f'Depth {depthRange[i]}')
+    plt.xlabel('Learning epoch')
+    plt.ylabel('Accurary with 10-CV')
+    plt.title(f'Accuracy with learning epoch for {datasetName} Dataset')
+    plt.legend()
+    plt.savefig(f'images/nn_{datasetName.lower()}_vgr.png')
 
 
+if __name__ == '__main__':
 
-## 2.3. WINE Dataset
-nnWineHdnAct = NNActivationSigmoid
-nnWineOutAct = NNActivationSigmoid
-print("", flush=True)
-print("WINE Dataset", flush=True)
-print("", flush=True)
+    print("DECISION TREE")
+    print("---------------------------------------------------------------------------------------------------------")
 
-nnWineNbEpoch = 500
-nnWineDimension = 4
-nnWineDepth = 1
-nnWineAlpha = 0.001
-# ### 2.3.1. Test arbitraire
-# print("WINE Dataset - Test Arbitraire", flush=True)
-# print("", flush=True)
-# nnTrainTest(wine_train_X, wine_train_Y, wine_test_X, wine_test_Y, wine_train_X.shape[1], 1, nnWineHdnAct,
-#             nnWineOutAct, nnWineAlpha, 100, True, "WINE")
-# ### 2.3.2. Selection du nombre d'epoques par CV
-# print("WINE Dataset - Selection Nb Epoques par CV", flush=True)
-# print("", flush=True)
-# nnCvNbEpoch(wine_train_X, wine_train_Y, 4, 1, nnWineHdnAct, nnWineOutAct, nnWineAlpha,
-#             [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], False, "WINE")
-### 2.3.3. Selection de la dimension par CV
-print("WINE Dataset - Selection Dimension par CV", flush=True)
-print("", flush=True)
-nnCvDimension(wine_train_X, wine_train_Y, range(1, 8, 1), 1, nnWineHdnAct, nnWineOutAct, nnWineAlpha,
-              nnWineNbEpoch, False, "WINE")
-# ### 2.3.4. Selection de la profondeur par CV
-# print("WINE Dataset - Selection Profondeur par CV", flush=True)
-# print("", flush=True)
-# nnCvDepth(wine_train_X, wine_train_Y, nnWineDimension, range(1, 6, 1), nnWineHdnAct, nnWineOutAct, nnWineAlpha,
-#           nnWineNbEpoch, False, "WINE")
-# ### 2.3.5. Entrainement et test avec les hyperparametres finaux
-# print("WINE Dataset - Test HyperParam sélectionnés", flush=True)
-# print("", flush=True)
-# nnTrainTest(wine_train_X, wine_train_Y, iris_test_X, iris_test_Y, nnWineDimension, nnWineDepth, nnWineHdnAct,
-#             nnWineOutAct, nnWineAlpha, nnWineNbEpoch, True, "WINE")
+    # 1.2. Iris Dataset
+
+    print("")
+    print("Iris Dataset")
+    print("")
+    ### 1.2.1. Courbe d'apprentissage
+    print("Iris Dataset - Learning Curve")
+    print("")
+    decisionTreeLC(iris_train_X, iris_train_Y, "IRIS")
+    ### 1.2.2. Entrainement et test
+    print("Iris Dataset - Training & Test")
+    print("")
+    decisionTreeTrnTst(iris_train_X, iris_train_Y, iris_test_X, iris_test_Y, "IRIS", iris_columns)
+    ### 1.2.3. Courbe d'apprentissage [Avec Elagage]
+    print("Iris Dataset - Pruned Tree - Learning Curve")
+    print("")
+    decisionTreeLC(iris_train_X, iris_train_Y, "IRIS", pruning=True)
+    ### 1.2.4. Entrainement et test [Avec Elagage]
+    print("Iris Dataset - Pruned Tree - Training & Test")
+    print("")
+    decisionTreeTrnTst(iris_train_X, iris_train_Y, iris_test_X, iris_test_Y, "IRIS", iris_columns,
+                       pruning=True)
+
+    # 1.3. Wine Dataset
+
+    print("")
+    print("Wine Dataset")
+    print("")
+    ### 1.3.1. Courbe d'apprentissage
+    print("Wine Dataset - Learning Curve")
+    print("")
+    decisionTreeLC(wine_train_X, wine_train_Y, "WINE")
+    ### 1.3.2. Entrainement et test
+    print("Wine Dataset - Training & Test")
+    print("")
+    decisionTreeTrnTst(wine_train_X, wine_train_Y, wine_test_X, wine_test_Y, "WINE", wine_columns)
+    ### 1.3.3. Courbe d'apprentissage [Avec Elagage]
+    print("Wine Dataset - Pruned Tree - Learning Curve")
+    print("")
+    decisionTreeLC(wine_train_X, wine_train_Y, "WINE", pruning=True)
+    ### 1.3.4. Entrainement et test [Avec Elagage]
+    print("Wine Dataset - Pruned Tree - Training & Test")
+    print("")
+    decisionTreeTrnTst(wine_train_X, wine_train_Y, wine_test_X, wine_test_Y, "WINE", wine_columns,
+                       pruning=True)
+
+    ## 1.4. Abalone Dataset
+
+    print("")
+    print("Abalone Dataset")
+    print("")
+    ### 1.4.1. Courbe d'apprentissage
+    print("Abalone Dataset - Learning Curve")
+    print("")
+    decisionTreeLC(abalone_train_X, abalone_train_Y, "ABALONE")
+    ### 1.4.2. Entrainement et test
+    print("Abalone Dataset - Training & Test")
+    print("")
+    decisionTreeTrnTst(abalone_train_X, abalone_train_Y, abalone_test_X, abalone_test_Y, "ABALONE",
+                       abalone_columns)
+    ### 1.4.3. Courbe d'apprentissage [Avec Elagage]
+    print("Abalone Dataset - Pruned Tree - Learning Curve")
+    print("")
+    decisionTreeLC(abalone_train_X, abalone_train_Y, "ABALONE", pruning=True)
+    ### 1.4.4. Entrainement et test [Avec Elagage]
+    print("Abalone Dataset - Pruned Tree - Training & Test")
+    print("")
+    decisionTreeTrnTst(abalone_train_X, abalone_train_Y, abalone_test_X, abalone_test_Y, "ABALONE",
+                       abalone_columns, pruning=True)
 
 
 
+    print("NEURAL NETWORK", flush=True)
+    print("-----------------------------------------------------------------------------------------------------------",
+          flush=True)
 
-## 2.4. ABALONE Dataset
-nnAbaloneHdnAct = NNActivationSigmoid
-nnAbaloneOutAct = NNActivationSoftmax
-print("", flush=True)
-print("ABALONE Dataset", flush=True)
-print("", flush=True)
+    ## 2.2. Iris Dataset
+    nnIrisHdnAct = NNActivationSigmoid
+    nnIrisOutAct = NNActivationSoftmax
+    print("")
+    print("IRIS Dataset")
+    print("")
 
-nnAbaloneNbEpoch = 100
-nnAbaloneDimension = 4
-nnAbaloneDepth = 1
-### 2.4.1. Test arbitraire
-# print("ABALONE Dataset - Test Arbitraire", flush=True)
-# print("", flush=True)
-# nnTrainTest(abalone_train_X, abalone_train_Y, abalone_test_X, abalone_test_Y, abalone_train_X.shape[1], 1,
-#             nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha, 100, True, "ABALONE")
-### 2.4.2. Selection du nombre d'epoques par CV
-print("ABALONE Dataset - Selection Nb Epoques par CV", flush=True)
-print("", flush=True)
-nnCvNbEpoch(abalone_train_X, abalone_train_Y, 4, 1, nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha,
-            [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], False, "ABALONE")
-# ### 2.4.3. Selection de la dimension par CV
-# print("ABALONE Dataset - Selection Dimension par CV", flush=True)
-# print("", flush=True)
-# nnCvDimension(abalone_train_X, abalone_train_Y, range(1, 8, 1), 1, nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha,
-#               nnAbaloneNbEpoch, False, "ABALONE")
-# ### 2.2.4. Selection de la profondeur par CV
-# print("ABALONE Dataset - Selection Profondeur par CV", flush=True)
-# print("", flush=True)
-# nnCvDepth(abalone_train_X, abalone_train_Y, nnAbaloneDimension, range(1, 6, 1), nnAbaloneHdnAct, nnAbaloneOutAct,
-#           nnAlpha, nnAbaloneNbEpoch, False, "ABALONE")
-# ### 2.2.5. Entrainement et test avec les hyperparametres finaux
-# print("ABALONE Dataset - Test HyperParam sélectionnés", flush=True)
-# print("", flush=True)
-# nnTrainTest(abalone_train_X, abalone_train_Y, abalone_test_X, abalone_test_Y, nnAbaloneDimension, nnAbaloneDepth,
-#             nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha, nnAbaloneNbEpoch, True, "ABALONE")
+    nnIrisNbEpoch = 400
+    nnIrisDimension = 2
+    nnIrisDepth = 1
+    ### 2.2.1. Test arbitraire
+    print("IRIS Dataset - Test Arbitraire")
+    print("")
+    nnTrainTest(iris_train_X, iris_train_Y, iris_test_X, iris_test_Y, iris_train_X.shape[1], 1, nnIrisHdnAct,
+                nnIrisOutAct, nnAlpha, 100, True, "IRIS")
+    ### 2.2.2. Selection du nombre d'epoques par CV
+    print("IRIS Dataset - Selection Nb Epoques par CV")
+    print("")
+    nnCvNbEpoch(iris_train_X, iris_train_Y, 4, 1, nnIrisHdnAct, nnIrisOutAct, nnAlpha,
+                [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], False, "IRIS")
+    ### 2.2.3. Selection de la dimension par CV
+    print("IRIS Dataset - Selection Dimension par CV")
+    print("")
+    nnCvDimension(iris_train_X, iris_train_Y, range(1, 8, 1), 1, nnIrisHdnAct, nnIrisOutAct, nnAlpha,
+                  nnIrisNbEpoch, False, "IRIS")
+    ### 2.2.4. Selection de la profondeur par CV
+    print("IRIS Dataset - Selection Profondeur par CV")
+    print("")
+    nnCvDepth(iris_train_X, iris_train_Y, nnIrisDimension, range(1, 6, 1), nnIrisHdnAct, nnIrisOutAct, nnAlpha,
+              nnIrisNbEpoch, False, "IRIS")
+    ### 2.2.5. Entrainement et test avec les hyperparametres finaux
+    print("IRIS Dataset - Test HyperParam sélectionnés")
+    print("")
+    nnTrainTest(iris_train_X, iris_train_Y, iris_test_X, iris_test_Y, nnIrisDimension, nnIrisDepth, nnIrisHdnAct,
+                nnIrisOutAct, nnAlpha, nnIrisNbEpoch, True, "IRIS")
+
+
+    ## 2.3. WINE Dataset
+    nnWineHdnAct = NNActivationSigmoid
+    nnWineOutAct = NNActivationSigmoid
+    print("", flush=True)
+    print("WINE Dataset", flush=True)
+    print("", flush=True)
+
+    nnWineNbEpoch = 500
+    nnWineDimension = 2
+    nnWineDepth = 1
+    nnWineAlpha = 0.001
+    ### 2.3.1. Test arbitraire
+    print("WINE Dataset - Test Arbitraire", flush=True)
+    print("", flush=True)
+    nnTrainTest(wine_train_X, wine_train_Y, wine_test_X, wine_test_Y, wine_train_X.shape[1], 1, nnWineHdnAct,
+                nnWineOutAct, nnWineAlpha, 100, True, "WINE")
+    ### 2.3.2. Selection du nombre d'epoques par CV
+    print("WINE Dataset - Selection Nb Epoques par CV", flush=True)
+    print("", flush=True)
+    nnCvNbEpoch_MltProc(wine_train_X, wine_train_Y, 4, 1, nnWineHdnAct, nnWineOutAct, nnWineAlpha,
+                        [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], False, "WINE")
+    ### 2.3.3. Selection de la dimension par CV
+    print("WINE Dataset - Selection Dimension par CV", flush=True)
+    print("", flush=True)
+    nnCvDimension_MltProc(wine_train_X, wine_train_Y, range(1, 8, 1), 1, nnWineHdnAct, nnWineOutAct, nnWineAlpha,
+                          nnWineNbEpoch, False, "WINE")
+    ### 2.3.4. Selection de la profondeur par CV
+    print("WINE Dataset - Selection Profondeur par CV", flush=True)
+    print("", flush=True)
+    nnCvDepth_MltProc(wine_train_X, wine_train_Y, nnWineDimension, range(1, 6, 1), nnWineHdnAct, nnWineOutAct,
+                      nnWineAlpha, nnWineNbEpoch, False, "WINE")
+    ### 2.3.5. Entrainement et test avec les hyperparametres finaux
+    print("WINE Dataset - Test HyperParam sélectionnés", flush=True)
+    print("", flush=True)
+    nnTrainTest(wine_train_X, wine_train_Y, wine_test_X, wine_test_Y, nnWineDimension, nnWineDepth, nnWineHdnAct,
+                nnWineOutAct, nnWineAlpha, nnWineNbEpoch, True, "WINE")
+
+
+    ## 2.4. ABALONE Dataset
+    nnAbaloneHdnAct = NNActivationSigmoid
+    nnAbaloneOutAct = NNActivationSoftmax
+    print("", flush=True)
+    print("ABALONE Dataset", flush=True)
+    print("", flush=True)
+
+    nnAbaloneNbEpoch = 400
+    nnAbaloneDimension = 2
+    nnAbaloneDepth = 1
+    ### 2.4.1. Test arbitraire
+    print("ABALONE Dataset - Test Arbitraire", flush=True)
+    print("", flush=True)
+    nnTrainTest(abalone_train_X, abalone_train_Y, abalone_test_X, abalone_test_Y, abalone_train_X.shape[1], 1,
+                nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha, 100, True, "ABALONE")
+    ## 2.4.2. Selection du nombre d'epoques par CV
+    print("ABALONE Dataset - Selection Nb Epoques par CV", flush=True)
+    print("", flush=True)
+    nnCvNbEpoch_MltProc(abalone_train_X, abalone_train_Y, 4, 1, nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha,
+                        [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], False, "ABALONE")
+    ### 2.4.3. Selection de la dimension par CV
+    print("ABALONE Dataset - Selection Dimension par CV", flush=True)
+    print("", flush=True)
+    nnCvDimension_MltProc(abalone_train_X, abalone_train_Y, range(1, 8, 1), 1, nnAbaloneHdnAct, nnAbaloneOutAct,
+                          nnAlpha, nnAbaloneNbEpoch, False, "ABALONE")
+    ### 2.2.4. Selection de la profondeur par CV
+    print("ABALONE Dataset - Selection Profondeur par CV", flush=True)
+    print("", flush=True)
+    nnCvDepth_MltProc(abalone_train_X, abalone_train_Y, nnAbaloneDimension, range(1, 6, 1), nnAbaloneHdnAct,
+                      nnAbaloneOutAct, nnAlpha, nnAbaloneNbEpoch, False, "ABALONE")
+    ### 2.2.5. Entrainement et test avec les hyperparametres finaux
+    print("ABALONE Dataset - Test HyperParam sélectionnés", flush=True)
+    print("", flush=True)
+    nnTrainTest(abalone_train_X, abalone_train_Y, abalone_test_X, abalone_test_Y, nnAbaloneDimension, nnAbaloneDepth,
+                nnAbaloneHdnAct, nnAbaloneOutAct, nnAlpha, nnAbaloneNbEpoch, True, "ABALONE")
